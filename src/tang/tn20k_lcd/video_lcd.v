@@ -89,6 +89,7 @@ osd_u8g2 osd_u8g2 (
         .data_in(mcu_data),
 
         .hs(sd_hs_n),
+        .ntsc(ntscmode),
         .vs(sd_vs_n),
 		     
         .r_in(sd_r),
