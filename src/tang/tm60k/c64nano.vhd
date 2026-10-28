@@ -303,6 +303,8 @@ signal db9_joy        : std_logic_vector(5 downto 0);
 signal turbo_mode     : std_logic_vector(1 downto 0);
 signal turbo_speed    : std_logic_vector(1 downto 0);
 signal dos_sel        : std_logic_vector(1 downto 0);
+signal dos_missing    : std_logic;                      -- drive DOS ROM not in flash
+signal core_error     : std_logic_vector(7 downto 0);   -- error number for the MCU, 0 = none
 signal c1541rom_cs    : std_logic;
 signal c1541rom_addr  : std_logic_vector(14 downto 0);
 signal c1541rom_data  : std_logic_vector(7 downto 0);
@@ -763,8 +765,13 @@ port map
     ext_en        => ext_en,
     c1541rom_cs   => c1541rom_cs,
     c1541rom_addr => c1541rom_addr,
-    c1541rom_data => c1541rom_data
+    c1541rom_data => c1541rom_data,
+    dos_missing   => dos_missing
 );
+
+-- core error for the MCU: 1..4 = the DOS ROM of the selected DOS (dos_sel + 1)
+-- is missing in flash, the companion shows a message for it
+core_error <= std_logic_vector(resize(unsigned(dos_sel), 8) + 1) when dos_missing = '1' else x"00";
 
 sd_lba <= loader_lba when loader_busy = '1' else disk_lba;
 sd_rd(0) <= c1541_sd_rd;
@@ -1234,6 +1241,7 @@ hid_inst: entity work.hid
  module_inst: entity work.sysctrl 
  port map 
  (
+  core_error          => core_error,
   clk                 => clk32,
   reset               => not pll_locked,
 --

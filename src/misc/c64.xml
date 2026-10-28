@@ -90,7 +90,23 @@
     </action>
 
   </actions>
-  
+
+  <!-- messages the companion shows when the core reports an error number;
+       text lines are separated by '|'. 1..4: the selected C1541 DOS ROM is
+       not in flash (Dolphin, CBM, Speed DOS, JiffyDOS) -->
+  <!--IS tang_nano20k tang_nano20k_ezflash tang_primer25k -->
+  <error code="1" title="C1541 DOS missing" text="Disk drive will not work.|Flash Dolphin DOS|2dosa_c.bin at 0x200000."/>
+  <error code="2" title="C1541 DOS missing" text="Disk drive will not work.|Flash CBM DOS 2.6 to|SPI flash at 0x20C000."/>
+  <error code="3" title="C1541 DOS missing" text="Disk drive will not work.|Flash Speed DOS Plus to|SPI flash at 0x214000."/>
+  <error code="4" title="C1541 DOS missing" text="Disk drive will not work.|Flash JiffyDOS to|SPI flash at 0x21C000."/>
+  <!--END-->
+  <!--NOT tang_nano20k tang_nano20k_ezflash tang_primer25k -->
+  <error code="1" title="C1541 DOS missing" text="Disk drive will not work.|Flash Dolphin DOS,|see the install guide."/>
+  <error code="2" title="C1541 DOS missing" text="Disk drive will not work.|Flash CBM DOS 2.6,|see the install guide."/>
+  <error code="3" title="C1541 DOS missing" text="Disk drive will not work.|Flash Speed DOS Plus,|see the install guide."/>
+  <error code="4" title="C1541 DOS missing" text="Disk drive will not work.|Flash JiffyDOS,|see the install guide."/>
+  <!--END-->
+
   <menu label="C64Nano">
  <button label="Detach Cartridge + Reset" action="detach_reset_hide"/>
     <menu label="System">

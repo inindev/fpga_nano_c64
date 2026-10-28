@@ -49,7 +49,8 @@ entity c1541_logic is
     ext_en          : in std_logic;
     c1541rom_addr   : out std_logic_vector(14 downto 0);
     c1541rom_data   : in std_logic_vector(7 downto 0);
-    c1541rom_cs     : out std_logic
+    c1541rom_cs     : out std_logic;
+    dos_missing     : out std_logic   -- no DOS ROM in flash (reset vector reads $FFFF)
   );
 end c1541_logic;
 
@@ -133,7 +134,31 @@ architecture SYN of c1541_logic is
   signal extram_do      : std_logic_vector(7 downto 0) := x"FF";
   signal extram_wr      : std_logic;
 
+  -- DOS ROM check, see below
+  signal vec_lo_ff      : std_logic;
+  signal vec_checked    : std_logic;
+
   begin
+
+  -- DOS ROM check: after reset the CPU reads its start address from $FFFC/
+  -- $FFFD. Erased flash reads $FF in both, which no DOS has, so the DOS ROM
+  -- of the selected kind isn't in flash. Checked again after every reset.
+  process (clk_32M)
+  begin
+    if rising_edge(clk_32M) then
+      if reset = '1' then
+        vec_checked <= '0';
+        dos_missing <= '0';
+      elsif p2_h_f = '1' and cpu_rw_n = '1' and vec_checked = '0' then
+        if cpu_a(15 downto 0) = x"FFFC" then
+          if cpu_di = x"FF" then vec_lo_ff <= '1'; else vec_lo_ff <= '0'; end if;
+        elsif cpu_a(15 downto 0) = x"FFFD" then
+          if vec_lo_ff = '1' and cpu_di = x"FF" then dos_missing <= '1'; else dos_missing <= '0'; end if;
+          vec_checked <= '1';
+        end if;
+      end if;
+    end if;
+  end process;
 
   process (clk_32M)
     variable count  : std_logic_vector(4 downto 0) := (others => '0');

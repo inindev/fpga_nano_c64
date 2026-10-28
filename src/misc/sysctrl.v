@@ -20,6 +20,10 @@ module sysctrl (
 
   input [1:0]       buttons, // S0 and S1 buttons on Tang Nano 20k
 
+  // error number for the MCU to show, 0 = none (e.g. a missing drive ROM).
+  // A new error raises the system interrupt, CMD 11 reads the number.
+  input [7:0]       core_error,
+
   output reg [1:0]  leds, // two leds can be controlled from the MCU
   output reg [23:0] color, // a 24bit color to e.g. be used to drive the ws2812
 
@@ -90,6 +94,10 @@ reg sys_int = 1'b1;
 reg [1:0] buttonsD, buttonsD2;
 reg	  buttons_irq_enable;
 
+// core error reporting
+reg [7:0] core_errorD;
+reg       error_irq;      // a new error waits to be read with CMD 11
+
 // the system cobtrol interrupt or any other interrupt (e,g sdc, hid, ...)
 // activates the interrupt line to the MCU by pulling it low
 assign int_out_n = (int_in != 8'h00 || sys_int)?1'b0:1'b1;
@@ -132,6 +140,8 @@ always @(posedge clk) begin
       disk_reset <= 1'b1;
 
       buttons_irq_enable <= 1'b1;  // allow buttons irq
+      core_errorD <= 8'h00;
+      error_irq <= 1'b0;
       int_ack <= 8'h00;
       coldboot = 1'b1;      // reset is actually the power-on-reset
       sys_int = 1'b1;       // coldboot interrupt
@@ -204,6 +214,13 @@ always @(posedge clk) begin
       if(port_out_available && !port_out_availableD)
 	sys_int <= 1'b1;
       
+      // a new (non-zero) core error raises the interrupt
+      core_errorD <= core_error;
+      if(core_error != core_errorD && core_error != 8'h00) begin
+        sys_int <= 1'b1;
+        error_irq <= 1'b1;
+      end
+
       // monitor buttons for changes and raise interrupt
       if(buttons_irq_enable) begin
         if(buttonsD2 != buttonsD) begin
@@ -357,7 +374,8 @@ always @(posedge clk) begin
 	        // bit[0]: coldboot flag
 	        // bit[1]: port data is available
 	        // bit[2]: buttons state change has been detected
-                data_out <= { 5'b00000, !buttons_irq_enable, (port_out_available != 8'd0), coldboot };
+	        // bit[3]: a core error waits to be read with CMD 11
+                data_out <= { 4'b0000, error_irq, !buttons_irq_enable, (port_out_available != 8'd0), coldboot };
 	        // reading the interrupt source acknowledges the coldboot notification
 	        if(state == 4'd0) coldboot <= 1'b0;            
 	    end
@@ -418,6 +436,12 @@ always @(posedge clk) begin
 	       data_out <= menu_rom_data;
 	       menu_rom_addr <= menu_rom_addr + 12'd1;
 	    end
+
+            // CMD 11: read the core error number (0 = none), acknowledges it
+            if(command == 8'd11) begin
+               data_out <= core_error;
+               if(state == 4'd0) error_irq <= 1'b0;
+            end
 	   
 	end
       end // if (data_in_strobe)

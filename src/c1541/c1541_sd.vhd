@@ -67,7 +67,8 @@ port(
     ext_en          : in std_logic;
     c1541rom_addr   : out std_logic_vector(14 downto 0);
     c1541rom_data   : in std_logic_vector(7 downto 0);
-    c1541rom_cs     : out std_logic
+    c1541rom_cs     : out std_logic;
+    dos_missing     : out std_logic   -- no DOS ROM in flash for the selected DOS
 );
 end c1541_sd;
 
@@ -155,7 +156,8 @@ tr00_sense_n <='0' when new_track_num_dbl = to_unsigned(0, new_track_num_dbl'len
     ext_en          => ext_en,
     c1541rom_addr   => c1541rom_addr,
     c1541rom_data   => c1541rom_data,
-    c1541rom_cs     => c1541rom_cs
+    c1541rom_cs     => c1541rom_cs,
+    dos_missing     => dos_missing
   );
 
 floppy : entity work.gcr_floppy
