@@ -27,7 +27,7 @@ module video (
 
           // values that can be configure by the user via osd          
           input [1:0]  system_scanlines,
-          input [1:0]  system_volume,
+          input [3:0]  system_volume,
           input [1:0]  system_screen,
 
 	      // hdmi/tdms
@@ -130,18 +130,18 @@ osd_u8g2 osd_u8g2 (
 wire [2:0] tmds;
 wire tmds_clock;
 
-// scale audio for valume by signed division
-wire [15:0] audio_vol_l = 
-    (system_volume == 2'd0)?16'd0:
-    (system_volume == 2'd1)?{ {2{audio_l[15]}}, audio_l[15:2] }:
-    (system_volume == 2'd2)?{ audio_l[15], audio_l[15:1] }:
-    audio_l;
+// scale audio by volume/10, volume 0..10: multiply by round(volume*25.6), then /256
+wire [8:0] vol_k =
+    (system_volume == 4'd0) ? 9'd0   : (system_volume == 4'd1) ? 9'd26  :
+    (system_volume == 4'd2) ? 9'd51  : (system_volume == 4'd3) ? 9'd77  :
+    (system_volume == 4'd4) ? 9'd102 : (system_volume == 4'd5) ? 9'd128 :
+    (system_volume == 4'd6) ? 9'd154 : (system_volume == 4'd7) ? 9'd179 :
+    (system_volume == 4'd8) ? 9'd205 : (system_volume == 4'd9) ? 9'd230 : 9'd256;
 
-wire [15:0] audio_vol_r = 
-    (system_volume == 2'd0)?16'd0:
-    (system_volume == 2'd1)?{ {2{audio_r[15]}}, audio_r[15:2] }:
-    (system_volume == 2'd2)?{ audio_r[15], audio_r[15:1] }:
-    audio_r;
+wire signed [25:0] audio_prod_l = $signed(audio_l) * $signed({1'b0, vol_k});
+wire signed [25:0] audio_prod_r = $signed(audio_r) * $signed({1'b0, vol_k});
+wire [15:0] audio_vol_l = audio_prod_l[23:8];
+wire [15:0] audio_vol_r = audio_prod_r[23:8];
 
 hdmi #(
    .AUDIO_RATE(48000), 

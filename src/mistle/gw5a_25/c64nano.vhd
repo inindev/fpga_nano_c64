@@ -183,7 +183,7 @@ signal sys_data_out   : std_logic_vector(7 downto 0);
 signal sdc_data_out   : std_logic_vector(7 downto 0);
 signal hid_int        : std_logic;
 signal system_scanlines : std_logic_vector(1 downto 0);
-signal system_volume  : std_logic_vector(1 downto 0);
+signal system_volume  : std_logic_vector(3 downto 0);
 signal joystick1      : std_logic_vector(7 downto 0);
 signal joystick2      : std_logic_vector(7 downto 0);
 signal mouse_btns     : std_logic_vector(1 downto 0);
